@@ -1,0 +1,10 @@
+---
+gateway_port: "8080"
+authorization_api_url: "https://auth.example.com/api/v1/authorization"
+services:
+  - path: "/users"
+    target_service: "http://user-service.default.svc.cluster.local"
+    target_port: "8080"
+  - path: "/orders"
+    target_service: "http://order-service.default.svc.cluster.local"
+    target_port: "8080"
