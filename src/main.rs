@@ -13,11 +13,19 @@ mod controller;
 #[tokio::main]
 async fn main() {
 
+    let args: Vec<String> = std::env::args().collect();
+
+    let config_path = match args.len() {
+        1 => "config.yaml",
+        2 => &args[1],
+        _ => panic!("Too many arguments")
+    };
+
     // Initialize the logger.
     SimpleLogger::new().init().expect("Unable to initialize logger");
 
     // Load the config from the config file, and parse the port.
-    let config = config_parser::load_config("config.yaml");
+    let config = config_parser::load_config(config_path);
     let port = config.get_port();
 
     // Create a new controller with the config, wrapped in an Arc so it can be shared between threads.
