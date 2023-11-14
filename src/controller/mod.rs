@@ -5,7 +5,6 @@ use hyper::http::request::Parts;
 use log::{debug};
 use crate::config_parser;
 
-#[derive(Clone)]
 pub struct Controller {
     client: Client<HttpConnector>,
     config: config_parser ::GatewayConfig
@@ -68,7 +67,17 @@ impl Controller {
 
         // build uri
         let req = Request::from_parts(parts, body);
-        let uri = format!("{}:{}{}", service_config.target_service, service_config.target_port, req.uri().path());
+
+        // remove port if it is 80 or 443 (http or https)
+        let target_port = match service_config.target_port.as_str() {
+            "80" => String::from(""),
+            "443" => String::from(""),
+            s => format!(":{}", s)
+        };
+
+        // build uri
+        let uri = format!("{}{}{}", service_config.target_service, target_port, req.uri().path());
+        debug!("uri: {}", uri);
 
 
         // build request
@@ -82,6 +91,9 @@ impl Controller {
     }
 
     async fn forward_request(&self, req: Request<Body>) -> Result<Response<Body>, Error> {
+
+        debug!("req headers {:?}", req.headers());
+
         match self.client.request(req).await {
             Ok(res) => {
                 // If the request is successful, return the response
