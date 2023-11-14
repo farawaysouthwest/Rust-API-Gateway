@@ -14,7 +14,6 @@ mod controller;
 async fn main() {
 
     let args: Vec<String> = std::env::args().collect();
-
     let config_path = match args.len() {
         1 => "config.yaml",
         2 => &args[1],
@@ -24,6 +23,8 @@ async fn main() {
     // Initialize the logger.
     SimpleLogger::new().init().expect("Unable to initialize logger");
 
+    // Controller //
+
     // Load the config from the config file, and parse the port.
     let config = config_parser::load_config(config_path);
     let port = config.get_port();
@@ -31,10 +32,8 @@ async fn main() {
     // Create a new controller with the config, wrapped in an Arc so it can be shared between threads.
     let controller = Arc::new(controller::Controller::new(config));
 
-    // Create a SocketAddr from the port.
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    // Log that the server is starting
-    info!("Starting server on {}", addr);
+
+    // Service //
 
     // Create a new service to handle requests.
     let make_service = make_service_fn(move |_conn| {
@@ -49,6 +48,14 @@ async fn main() {
                 }))
             }
         });
+
+
+    // Server //
+
+    // Create a SocketAddr from the port.
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    // Log that the server is starting
+    info!("Starting server on {}", addr);
 
     // Start the server.
     let server = Server::bind(&addr).serve(make_service);
