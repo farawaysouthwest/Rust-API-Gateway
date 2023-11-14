@@ -56,36 +56,12 @@ impl ControllerInterface for Controller {
 
 // private methods
 impl Controller {
-    fn not_found(&self) -> Result<Response<Body>, Error> {
-        debug!("Responding with 404 Not Found");
-        let mut response = Response::new(Body::from("404 Not Found"));
-        *response.status_mut() = hyper::StatusCode::NOT_FOUND;
-        Ok(response)
-    }
-
-    fn service_unavailable<T>(&self, reason: T) -> Result<Response<Body>, Error>
-        where
-            T: Into<Body>,
-    {
-        debug!("Responding with 503 Service Unavailable");
-        let mut response = Response::new(reason.into());
-        *response.status_mut() = hyper::StatusCode::SERVICE_UNAVAILABLE;
-        Ok(response)
-    }
     fn get_service_config(&self, path: &str) -> Option<&config_parser::ServiceConfig> {
         let option = self.config.services.iter().find(|service| service.path == path);
         match option {
             Some(service_config) => Some(service_config),
             None => None
         }
-    }
-
-
-    // Return a 200 response for the health check
-    fn health_check(&self) -> Result<Response<Body>, Error> {
-        let response = Response::new(Body::from("OK"));
-        debug!("Responding with 200 OK for health check");
-        Ok(response)
     }
 
     async fn build_downstream_request(&self, parts: Parts, body: Body, service_config: &config_parser::ServiceConfig) -> Result<Request<Body>, Error> {
@@ -119,4 +95,30 @@ impl Controller {
             }
         }
     }
+
+    // Status return methods.
+    fn health_check(&self) -> Result<Response<Body>, Error> {
+        debug!("Responding with 200 OK for health check");
+        let response = Response::new(Body::from("OK"));
+        Ok(response)
+    }
+
+    fn not_found(&self) -> Result<Response<Body>, Error> {
+        debug!("Responding with 404 Not Found");
+        let mut response = Response::new(Body::from("404 Not Found"));
+        *response.status_mut() = hyper::StatusCode::NOT_FOUND;
+        Ok(response)
+    }
+
+    fn service_unavailable<T>(&self, reason: T) -> Result<Response<Body>, Error>
+        where
+            T: Into<Body>,
+    {
+        debug!("Responding with 503 Service Unavailable");
+        let mut response = Response::new(reason.into());
+        *response.status_mut() = hyper::StatusCode::SERVICE_UNAVAILABLE;
+        Ok(response)
+    }
+
+
 }
