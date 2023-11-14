@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use hyper::{Body, Response, Error, Request, Client};
 use hyper::client::HttpConnector;
 use hyper::http::request::Parts;
@@ -10,10 +11,17 @@ pub struct Controller {
     config: config_parser ::GatewayConfig
 }
 
+// public interface
+#[async_trait]
 pub trait ControllerInterface {
     fn new(config: config_parser::GatewayConfig) -> Controller;
+
+    async fn handle_request(&self, req: Request<Body>) -> Result<Response<Body>, Error>;
 }
 
+
+// public methods
+#[async_trait]
 impl ControllerInterface for Controller {
     fn new(config: config_parser::GatewayConfig) -> Controller {
         Controller {
@@ -21,10 +29,7 @@ impl ControllerInterface for Controller {
             config
         }
     }
-}
-
-impl Controller {
-    pub async fn handle_request(&self, req: Request<Body>) -> Result<Response<Body>, Error> {
+    async fn handle_request(&self, req: Request<Body>) -> Result<Response<Body>, Error> {
         let path = req.uri().path();
 
         // Check if the requested path is the health-check endpoint
@@ -46,7 +51,11 @@ impl Controller {
             Err(_) => self.not_found()
         }
     }
+}
 
+
+// private methods
+impl Controller {
     fn not_found(&self) -> Result<Response<Body>, Error> {
         debug!("Responding with 404 Not Found");
         let mut response = Response::new(Body::from("404 Not Found"));

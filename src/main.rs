@@ -1,6 +1,5 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::thread;
 use hyper::Server;
 use hyper::service::{make_service_fn, service_fn};
 use log::{debug, info};
@@ -19,7 +18,7 @@ async fn main() {
 
     // Load the config from the config file, and parse the port.
     let config = config_parser::load_config("config.yaml");
-    let port = config.gateway_port.clone().parse::<u16>().expect("Invalid port");
+    let port = config.get_port();
 
     // Create a new controller with the config, wrapped in an Arc so it can be shared between threads.
     let controller = Arc::new(controller::Controller::new(config));
@@ -35,13 +34,10 @@ async fn main() {
         async {
             Ok::<_, hyper::Error>(service_fn(move |req| {
                 let controller = controller.clone();
-                let t = thread::spawn(move || {
                 async move {
                     debug!("Received request: {:?}", req);
                     return controller.handle_request(req).await;
                 }
-                }).join().expect("thread::spawn failed");
-                t
                 }))
             }
         });

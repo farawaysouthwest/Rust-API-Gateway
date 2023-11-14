@@ -37,3 +37,9 @@ pub fn load_config(path: &str) -> GatewayConfig {
     debug!("Config loaded: {:?}", config);
     config
 }
+
+impl GatewayConfig {
+    pub fn get_port(&self) -> u16 {
+        self.gateway_port.clone().parse::<u16>().expect("Invalid port")
+    }
+}
