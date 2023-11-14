@@ -73,7 +73,7 @@ impl Controller {
 
         // build request
         let mut builder = Request::builder().uri(uri).method(req.method()).version(req.version());
-        *builder.headers_mut().unwrap() = req.headers().clone();
+        *builder.headers_mut().expect("Unable to get headers form upstream request") = req.headers().clone();
 
         // build body
         let downstream_request = builder.body(req.into_body()).expect("Unable to build downstream request");
@@ -88,10 +88,10 @@ impl Controller {
                 debug!("Request forwarded successfully");
                 Ok(res)
             }
-            Err(_) => {
+            Err(e) => {
                 // If there is an error connecting to the requested service, return an error
                 debug!("Failed to forward request");
-                self.service_unavailable("Failed to forward request")
+                self.service_unavailable(e.message().to_string())
             }
         }
     }
@@ -112,10 +112,12 @@ impl Controller {
 
     fn service_unavailable<T>(&self, reason: T) -> Result<Response<Body>, Error>
         where
-            T: Into<Body>,
+            T: Into<String>,
     {
         debug!("Responding with 503 Service Unavailable");
-        let mut response = Response::new(reason.into());
+
+        debug!("Reason: {:?}", reason.into());
+        let mut response = Response::new("503 Service Unavailable".into());
         *response.status_mut() = hyper::StatusCode::SERVICE_UNAVAILABLE;
         Ok(response)
     }
